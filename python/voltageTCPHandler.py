@@ -35,21 +35,21 @@ class VoltageTCPHandler(socketserver.StreamRequestHandler):
         if stringdata == tcpmessages.ACTIVATE_OUTPUT:
             self.server.writer.activate()
             return
-        if stringdata == tcpmessages.:
+        if stringdata == tcpmessages.GET_OUT_FILENAME:
             self.server.sendall(self.server.writer.filename)
             return
-        if stringdata == "deactivate_output":
+        if stringdata == tcpmessages.DEACTIVATE_OUTPUT:
             self.server.writer.deactivate()
             self.acknowledge()
             return
-        if stringdata == "clear_output":
+        if stringdata == tcpmessages.CLEAR_OUTPUT:
             self.server.writer.clear_file()
             self.acknowledge()
             return
-        if stringdata == "ack" and self.server.switch.is_active:
+        if stringdata == tcpmessages.GET_VOLTAGE and self.server.switch.is_active:
             self.send_voltage()
             return
-        if stringdata == "get_filenames":
+        if stringdata == tcpmessages.GET_EXISITING_FILES:
             self.send_filenames()
             return
 
@@ -61,22 +61,16 @@ class VoltageTCPHandler(socketserver.StreamRequestHandler):
         self.not_acknowledge()
 
     def handle_method_value(self, method, value):
-        if method == "set_path":
+        if method == tcpmessages.SET_PATH:
             self.server.writer.set_file_path(value)
             return
-        if method == "set_rate":
+        if method == tcpmessages.SET_RATE:
             self.server.rate_container.value = float(value)
             return
-        if method == "get_recordeddata":
+        if method == tcpmessages.GET_RECORDEDDATA:
             lines = self.server.writer.get_recorded_values(value)
             self.request.sendall('\t'.join(lines))
             return
-
-    def acknowledge(self):
-        self.request.sendall(b"ack")        
-
-    def not_acknowledge(self):
-        self.request.sendall(b"nack")        
 
     def send_filenames(self):
         filenames = self.server.writer.get_filenames()
