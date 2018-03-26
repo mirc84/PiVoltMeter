@@ -40,14 +40,18 @@ class VoltageTCPHandler(socketserver.StreamRequestHandler):
             return
         if stringdata == tcpmessages.DEACTIVATE_OUTPUT:
             self.server.writer.deactivate()
-            self.acknowledge()
             return
         if stringdata == tcpmessages.CLEAR_OUTPUT:
             self.server.writer.clear_file()
-            self.acknowledge()
             return
         if stringdata == tcpmessages.GET_VOLTAGE and self.server.switch.is_active:
             self.send_voltage()
+            return
+        if stringdata == tcpmessages.GET_STATUS:
+            if self.server.switch.is_active:
+                self.request.sendall(0)
+            else:
+                self.request.sendall(1)
             return
         if stringdata == tcpmessages.GET_EXISITING_FILES:
             self.send_filenames()
@@ -58,7 +62,6 @@ class VoltageTCPHandler(socketserver.StreamRequestHandler):
             self.handle_method_value(args[0], args[1])
             return
 
-        self.not_acknowledge()
 
     def handle_method_value(self, method, value):
         if method == tcpmessages.SET_PATH:

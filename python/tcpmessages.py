@@ -1,6 +1,7 @@
 
 START = "start"
 STOP = "stop"
+GET_STATUS = "get_status"
 GET_VOLTAGE = "get_voltage"
 ACTIVATE_OUTPUT = "activate_output"
 DEACTIVATE_OUTPUT = "activate_output"
