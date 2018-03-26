@@ -1,4 +1,5 @@
 import socketserver
+import tcpmessages
 
 class VoltageTCPHandler(socketserver.StreamRequestHandler):
     """
@@ -25,16 +26,16 @@ class VoltageTCPHandler(socketserver.StreamRequestHandler):
 
         print("received: {}".format(stringdata))
 
-        if stringdata == "start":
+        if stringdata == tcpmessages.START:
             self.start()
             return
-        if stringdata == "stop":
+        if stringdata == tcpmessages.STOP:
             self.stop()
             return
-        if stringdata == "activate_output":
+        if stringdata == tcpmessages.ACTIVATE_OUTPUT:
             self.server.writer.activate()
             return
-        if stringdata == "get_out_file":
+        if stringdata == tcpmessages.:
             self.server.sendall(self.server.writer.filename)
             return
         if stringdata == "deactivate_output":
