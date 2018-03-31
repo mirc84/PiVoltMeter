@@ -1,17 +1,15 @@
 package eu.selfhost.mirc0.pivoltmeter;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -28,10 +26,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -52,6 +50,21 @@ public class MainActivity extends AppCompatActivity {
                 String portText = portTextView.getText().toString();
                 int port = Integer.parseInt(portText);
                 StartMeasuring(selectedServer, port);
+            }
+        });
+        Button stopButton = findViewById(R.id.stop_measuring_button);
+        stopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                stopMeasuring();
+            }
+        });
+
+        Button disconnectButton = findViewById(R.id.disconnect_button);
+        disconnectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                disconnect();
             }
         });
 
@@ -81,6 +94,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        final EditText rateTextView = findViewById(R.id.rateEditText);
+        findViewById(R.id.applyRateButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String text = rateTextView.getText().toString();
+                setRate(Double.parseDouble(text));
+            }
+        });
+
+        AddHost("192.168.2.148", "Debug");
         NetworkScanner scanner = new NetworkScanner(new NetworkScanner.HostFoundHandler() {
             @Override
             public void FoundHost(final String hostAddress, final String hostName) {
@@ -95,6 +118,68 @@ public class MainActivity extends AppCompatActivity {
         scanner.SearchNetwork();
     }
 
+    private void setRate(final double rate) {
+        if (_client == null){
+//            findViewById(R.id.disconnect_button).setActivated(false);
+//            findViewById(R.id.stop_measuring_button).setActivated(false);
+            return;
+        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                _client.setMeasureRate(rate);
+
+            }
+        }).start();
+    }
+
+    private void stopMeasuring() {
+        if (_client == null){
+//            findViewById(R.id.disconnect_button).setActivated(false);
+//            findViewById(R.id.stop_measuring_button).setActivated(false);
+            return;
+        }
+
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                _client.stop();
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+//                        findViewById(R.id.stop_measuring_button).setActivated(false);
+                    }
+                });
+            }
+        });
+        t.start();
+    }
+
+    private void disconnect() {
+        if (_client == null){
+//            findViewById(R.id.disconnect_button).setActivated(false);
+//            findViewById(R.id.stop_measuring_button).setActivated(false);
+            return;
+        }
+
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                _client.disconnect();
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+//                        findViewById(R.id.stop_measuring_button).setActivated(false);
+//                        findViewById(R.id.disconnect_button).setActivated(false);
+                    }
+                });
+            }
+        });
+        t.start();
+    }
+
     private void AddHost(String hostAddress, String hostName) {
         String host;
         if (hostName == null)
@@ -106,12 +191,8 @@ public class MainActivity extends AppCompatActivity {
         _spinnerAdapter.notifyDataSetChanged();
     }
 
-    private void StartMeasuring(final String ip, final int port) {
-        if (_client != null)
-        {
-            _client.stopClient();
-            _client = null;
-            _button.setText("Start");
+    private void Connect(final String ip, final int port){
+        if (_client != null) {
             return;
         }
 
@@ -128,14 +209,43 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Runnable connect = new Runnable() {
+        Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-                _client.connect(ip, port);
+                boolean success = _client.connect(ip, port);
+                if (!success)
+                    return;
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+//                        findViewById(R.id.disconnect_button).setActivated(true);
+//                        findViewById(R.id.connect_button).setActivated(false);
+                    }
+                });
             }
-        };
-        AsyncTask.execute(connect);
-        _button.setText("Stop");
+        });
+        t.start();
+    }
+
+    private void StartMeasuring(final String ip, final int port) {
+        if (_client == null) {
+            Connect(ip, port);
+        }
+
+        _client.startReadingEndlessVoltage();
+//        findViewById(R.id.stop_measuring_button).setActivated(true);
+//        findViewById(R.id.start_measuring_button).setActivated(false);
+    }
+
+    private void StopMeasuring(final String ip, final int port) {
+        if (_client == null) {
+            return;
+        }
+
+        _client.stop();
+//        findViewById(R.id.stop_measuring_button).setActivated(false);
+//        findViewById(R.id.start_measuring_button).setActivated(true);
     }
 
     @Override

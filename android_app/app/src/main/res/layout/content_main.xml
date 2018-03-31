@@ -1,67 +1,138 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="8dp">
-
-    <EditText
-        android:id="@+id/server_edit_name"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:inputType="text" />
-
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Available Network Devices" />
-
-    <Spinner
-        android:id="@+id/servers_spinner"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"></Spinner>
-
-    <TextView
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="IP" />
+        android:orientation="vertical"
+        android:padding="8dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <EditText
-            android:id="@+id/server_edit_host"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="127.0.0.1"
-            android:inputType="textUri" />
-
-        <EditText
-            android:id="@+id/server_edit_port"
+        <!-- Available IPs -->
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="Port"
-            android:text="42000"
-            android:inputType="number">
+            android:text="Available Network Devices" />
+        <Spinner
+            android:padding="4sp"
+            android:id="@+id/servers_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"></Spinner>
 
-        </EditText>
+        <!-- Server -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="IP" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <EditText
+                android:padding="4sp"
+                android:id="@+id/server_edit_host"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="IP"
+                android:text="192.168.2.148"
+                android:inputType="textUri" />
+
+            <EditText
+                android:padding="4sp"
+                android:id="@+id/server_edit_port"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="Port"
+                android:text="42000"
+                android:inputType="number">
+
+            </EditText>
+
+        </LinearLayout>
+
+        <!-- Display -->
+        <TextView
+            android:padding="4sp"
+            android:id="@+id/current_voltage"
+            android:textAlignment="textEnd"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="0 V"
+            android:textSize="64sp" />
+
+        <!-- Stop / Stop measure -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button android:id="@+id/start_measuring_button"
+                android:padding="4sp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Start"/>
+
+            <Button android:id="@+id/stop_measuring_button"
+                android:padding="4sp"
+                android:clickable="false"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Pause"/>
+
+        </LinearLayout>
+
+        <!-- Dis- / Connect -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button android:id="@+id/disconnect_button"
+                android:padding="4sp"
+                android:clickable="false"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Disconnect"/>
+
+            <Button android:id="@+id/connect_button"
+                android:padding="4sp"
+                android:clickable="false"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Connect"/>
+
+        </LinearLayout>
+
+        <!-- Rate -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Measure Rate" />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <EditText
+                android:id="@+id/rateEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:inputType="numberDecimal"/>
+
+            <Button
+                android:id="@+id/applyRateButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
 
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/current_voltage"
-        android:textAlignment="textEnd"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="0 V"
-        android:textSize="64sp" />
-
-    <Button android:id="@+id/start_measuring_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Start"/>
-
-</LinearLayout>
+</ScrollView>

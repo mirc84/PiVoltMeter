@@ -2,128 +2,108 @@ package eu.selfhost.mirc0.pivoltmeter;
 
 import android.util.Log;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.io.IOException;
 
 import static android.content.ContentValues.TAG;
 
 public class PiClient {
 
-    // message to send to the server
-    private String mServerMessage;
+    private final IPiConnection _connection;
     // sends message received notifications
-    private OnMessageReceived mMessageListener;
-    // while this is true, the server will continue running
-    private boolean mRun = false;
-    // used to send messages
-    private PrintWriter mBufferOut;
-    // used to read messages from the server
-    private BufferedReader mBufferIn;
-    private Object _lock = new Object();
+    private OnMessageReceived _messageListener;
+    private boolean _isActive;
+    private Thread _readingThread;
+
     /**
      * Constructor of the class. OnMessagedReceived listens for the messages received from server
      */
     public PiClient(OnMessageReceived listener) {
-        mMessageListener = listener;
+        _messageListener = listener;
+        _connection = new PiConnection();
     }
 
-    /**
-     * Sends the message entered by client to the server
-     *
-     * @param message text entered by client
-     */
-    private void sendMessage(final String message) {
-        if (mBufferOut != null) {
-            Log.d(TAG, "Sending: " + message);
-            mBufferOut.println(message + "\r\n");
-            mBufferOut.flush();
-        }
+    public boolean connect(String serverIp, int serverPort){
+        if (_connection.getIsConnected())
+            _connection.Disconnect();
+        return _connection.Connect(serverIp, serverPort);
     }
 
-    /**
-     * Close the connection and release the members
-     */
-    public void stopClient() {
+    public void disconnect() {
+        if (!_connection.getIsConnected())
+            return;
 
-        mRun = false;
-
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                _connection.Disconnect();
+            }
+        });
+        t.start();
     }
 
-    public void connect(String serverIp, int serverPort) {
+    public void start(){
+        if (!_connection.getIsConnected())
+            return;
 
-        mRun = true;
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                _connection.sendMessage(TCPMessages.START);
+                startReadingEndlessVoltage();
+            }
+        });
+        t.start();
+    }
 
-        try {
-            //here you must put your computer's IP address.
-            InetAddress serverAddr = InetAddress.getByName(serverIp);
+    public void stop() {
+        if (!_connection.getIsConnected())
+            return;
 
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                _connection.sendMessage(TCPMessages.STOP);
+                _isActive = false;
+            }
+        });
+        t.start();
+    }
 
-            Log.e("TCP Client", "C: Connecting...");
+    public void startReadingEndlessVoltage() {
 
-            //create a socket to make the connection with the server
-            Socket socket = new Socket();
-            socket.connect(new InetSocketAddress(serverAddr, serverPort), 2000);
-            socket.setKeepAlive(true);
+        _isActive = true;
+        if (_readingThread != null && _readingThread.getState() != Thread.State.TERMINATED)
+            return;
 
-            try {
-
-                //sends the message to the server
-                mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-
-                //receives the message which the server sends back
-                mBufferIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-                sendMessage("start");
-
+        _readingThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                start();
                 //in this while the client listens for the messages sent by the server
-                while (mRun) {
+                while (_connection.getIsConnected() && _isActive) {
+                    try {
+                        String v = _connection.sendAndReceiveMessage(TCPMessages.GET_VOLTAGE);
+                        try {
+                            Double number = Double.parseDouble(v);
+                            v = String.format ("%.2f", number);
+                        }
+                        catch (Exception e){
 
-                    mServerMessage = mBufferIn.readLine();
-
-                    if (mServerMessage != null && mMessageListener != null) {
-                        //call the method messageReceived from MyActivity class
-                        Log.d(TAG, String.format("Received: {0}", mServerMessage));
-                        mMessageListener.messageReceived(mServerMessage);
-                        sendMessage("ack");
+                        }
+                        Log.d(TAG, String.format("Received: {0}", v));
+                        _messageListener.messageReceived(v);
+                    } catch (IOException e) {
+                        break;
                     }
                 }
-
-                CloseConnection();
-            } catch (Exception e) {
-
-                Log.e("TCP", "S: Error", e);
-
-            } finally {
-                //the socket must be closed. It is not possible to reconnect to this socket
-                // after it is closed, which means a new socket instance has to be created.
-                socket.close();
             }
-
-        } catch (Exception e) {
-
-            Log.e("TCP", "C: Error", e);
-
-        }
-
+        });
+        _readingThread.start();
     }
 
-    private void CloseConnection() {
-        sendMessage("stop");
-        if (mBufferOut != null) {
-            mBufferOut.flush();
-            mBufferOut.close();
-        }
+    public void setMeasureRate(double rate) {
 
-        mMessageListener = null;
-        mBufferIn = null;
-        mBufferOut = null;
-        mServerMessage = null;
+        _connection.sendMessage(TCPMessages.SET_RATE);
     }
 
     //Declare the interface. The method messageReceived(String message) will must be implemented in the MyActivity
